@@ -11,6 +11,13 @@ import { registerContactCommands } from './commands/contacts.js';
 import { registerBroadcastCommands } from './commands/broadcasts.js';
 import { registerSequenceCommands } from './commands/sequences.js';
 import { registerAutomationCommands } from './commands/automations.js';
+import { registerCustomFieldCommands } from './commands/custom-fields.js';
+import { registerValidateCommands } from './commands/validate.js';
+import { registerAccountGroupCommands } from './commands/account-groups.js';
+import { registerApiKeyCommands } from './commands/api-keys.js';
+import { registerUsageCommands } from './commands/usage.js';
+import { registerLogsCommands } from './commands/logs.js';
+import { registerTrackingTagCommands } from './commands/tracking-tags.js';
 
 /**
  * Zernio CLI - Schedule posts, manage inbox, broadcasts, sequences, and automations across 14 platforms.
@@ -46,6 +53,13 @@ cli = registerContactCommands(cli);
 cli = registerBroadcastCommands(cli);
 cli = registerSequenceCommands(cli);
 cli = registerAutomationCommands(cli);
+cli = registerCustomFieldCommands(cli);
+cli = registerValidateCommands(cli);
+cli = registerAccountGroupCommands(cli);
+cli = registerApiKeyCommands(cli);
+cli = registerUsageCommands(cli);
+cli = registerLogsCommands(cli);
+cli = registerTrackingTagCommands(cli);
 
 // Parse and execute
 cli.parse();

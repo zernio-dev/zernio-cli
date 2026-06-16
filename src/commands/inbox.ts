@@ -244,5 +244,284 @@ export function registerInboxCommands(yargs: Argv): Argv {
           handleError(err);
         }
       },
+    )
+    .command(
+      'inbox:review-reply-delete <reviewId>',
+      'Delete a reply to a review',
+      (y) =>
+        y
+          .positional('reviewId', { type: 'string', describe: 'Review ID', demandOption: true })
+          .option('accountId', { type: 'string', describe: 'Account ID', demandOption: true }),
+      async (argv) => {
+        try {
+          const late = createClient();
+          const { data } = await late.reviews.deleteInboxReviewReply({ path: { reviewId: argv.reviewId! }, body: { accountId: argv.accountId! } as any });
+          output(data, argv.pretty as boolean);
+        } catch (err) {
+          handleError(err);
+        }
+      },
+    )
+    .command(
+      'inbox:create-conversation',
+      'Start a new DM conversation',
+      (y) =>
+        y
+          .option('accountId', { type: 'string', describe: 'Account ID', demandOption: true })
+          .option('participantId', { type: 'string', describe: 'Recipient platform user ID' })
+          .option('participantUsername', { type: 'string', describe: 'Recipient username' })
+          .option('message', { type: 'string', describe: 'Opening message text' })
+          .option('templateName', { type: 'string', describe: 'WhatsApp template name' })
+          .option('templateLanguage', { type: 'string', describe: 'WhatsApp template language code' }),
+      async (argv) => {
+        try {
+          const late = createClient();
+          const body: Record<string, unknown> = { accountId: argv.accountId };
+          for (const k of ['participantId', 'participantUsername', 'message', 'templateName', 'templateLanguage'] as const) {
+            if (argv[k] !== undefined) body[k] = argv[k];
+          }
+          const { data } = await late.messages.createInboxConversation({ body: body as any });
+          output(data, argv.pretty as boolean);
+        } catch (err) {
+          handleError(err);
+        }
+      },
+    )
+    .command(
+      'inbox:update-conversation <conversationId>',
+      'Update a conversation (e.g. archive)',
+      (y) =>
+        y
+          .positional('conversationId', { type: 'string', describe: 'Conversation ID', demandOption: true })
+          .option('accountId', { type: 'string', describe: 'Account ID', demandOption: true })
+          .option('status', { type: 'string', describe: 'New status (active, archived)', demandOption: true }),
+      async (argv) => {
+        try {
+          const late = createClient();
+          const { data } = await late.messages.updateInboxConversation({ path: { conversationId: argv.conversationId! }, body: { accountId: argv.accountId!, status: argv.status! } as any });
+          output(data, argv.pretty as boolean);
+        } catch (err) {
+          handleError(err);
+        }
+      },
+    )
+    .command(
+      'inbox:edit-message <conversationId> <messageId>',
+      'Edit a sent message (where supported)',
+      (y) =>
+        y
+          .positional('conversationId', { type: 'string', describe: 'Conversation ID', demandOption: true })
+          .positional('messageId', { type: 'string', describe: 'Message ID', demandOption: true })
+          .option('accountId', { type: 'string', describe: 'Account ID', demandOption: true })
+          .option('text', { type: 'string', describe: 'New message text' }),
+      async (argv) => {
+        try {
+          const late = createClient();
+          const body: Record<string, unknown> = { accountId: argv.accountId };
+          if (argv.text !== undefined) body.text = argv.text;
+          const { data } = await late.messages.editInboxMessage({ path: { conversationId: argv.conversationId!, messageId: argv.messageId! }, body: body as any });
+          output(data, argv.pretty as boolean);
+        } catch (err) {
+          handleError(err);
+        }
+      },
+    )
+    .command(
+      'inbox:delete-message <conversationId> <messageId>',
+      'Delete a sent message (where supported)',
+      (y) =>
+        y
+          .positional('conversationId', { type: 'string', describe: 'Conversation ID', demandOption: true })
+          .positional('messageId', { type: 'string', describe: 'Message ID', demandOption: true })
+          .option('accountId', { type: 'string', describe: 'Account ID', demandOption: true }),
+      async (argv) => {
+        try {
+          const late = createClient();
+          const { data } = await late.messages.deleteInboxMessage({ path: { conversationId: argv.conversationId!, messageId: argv.messageId! }, query: { accountId: argv.accountId! } as any });
+          output(data, argv.pretty as boolean);
+        } catch (err) {
+          handleError(err);
+        }
+      },
+    )
+    .command(
+      'inbox:typing <conversationId>',
+      'Send a typing indicator in a conversation',
+      (y) =>
+        y
+          .positional('conversationId', { type: 'string', describe: 'Conversation ID', demandOption: true })
+          .option('accountId', { type: 'string', describe: 'Account ID', demandOption: true }),
+      async (argv) => {
+        try {
+          const late = createClient();
+          const { data } = await late.messages.sendTypingIndicator({ path: { conversationId: argv.conversationId! }, body: { accountId: argv.accountId! } as any });
+          output(data, argv.pretty as boolean);
+        } catch (err) {
+          handleError(err);
+        }
+      },
+    )
+    .command(
+      'inbox:mark-read <conversationId>',
+      'Mark a conversation as read',
+      (y) =>
+        y
+          .positional('conversationId', { type: 'string', describe: 'Conversation ID', demandOption: true })
+          .option('accountId', { type: 'string', describe: 'Account ID', demandOption: true }),
+      async (argv) => {
+        try {
+          const late = createClient();
+          const { data } = await late.messages.markConversationRead({ path: { conversationId: argv.conversationId! }, body: { accountId: argv.accountId! } as any });
+          output(data, argv.pretty as boolean);
+        } catch (err) {
+          handleError(err);
+        }
+      },
+    )
+    .command(
+      'inbox:react <conversationId> <messageId>',
+      'Add a reaction to a message',
+      (y) =>
+        y
+          .positional('conversationId', { type: 'string', describe: 'Conversation ID', demandOption: true })
+          .positional('messageId', { type: 'string', describe: 'Message ID', demandOption: true })
+          .option('accountId', { type: 'string', describe: 'Account ID', demandOption: true })
+          .option('emoji', { type: 'string', describe: 'Reaction emoji', demandOption: true }),
+      async (argv) => {
+        try {
+          const late = createClient();
+          const { data } = await late.messages.addMessageReaction({ path: { conversationId: argv.conversationId!, messageId: argv.messageId! }, body: { accountId: argv.accountId!, emoji: argv.emoji! } as any });
+          output(data, argv.pretty as boolean);
+        } catch (err) {
+          handleError(err);
+        }
+      },
+    )
+    .command(
+      'inbox:unreact <conversationId> <messageId>',
+      'Remove a reaction from a message',
+      (y) =>
+        y
+          .positional('conversationId', { type: 'string', describe: 'Conversation ID', demandOption: true })
+          .positional('messageId', { type: 'string', describe: 'Message ID', demandOption: true })
+          .option('accountId', { type: 'string', describe: 'Account ID', demandOption: true }),
+      async (argv) => {
+        try {
+          const late = createClient();
+          const { data } = await late.messages.removeMessageReaction({ path: { conversationId: argv.conversationId!, messageId: argv.messageId! }, query: { accountId: argv.accountId! } as any });
+          output(data, argv.pretty as boolean);
+        } catch (err) {
+          handleError(err);
+        }
+      },
+    )
+    .command(
+      'inbox:delete-comment <postId>',
+      'Delete a comment on a post',
+      (y) =>
+        y
+          .positional('postId', { type: 'string', describe: 'Post ID', demandOption: true })
+          .option('accountId', { type: 'string', describe: 'Account ID', demandOption: true })
+          .option('commentId', { type: 'string', describe: 'Comment ID', demandOption: true }),
+      async (argv) => {
+        try {
+          const late = createClient();
+          const { data } = await late.comments.deleteInboxComment({ path: { postId: argv.postId! }, query: { accountId: argv.accountId!, commentId: argv.commentId! } as any });
+          output(data, argv.pretty as boolean);
+        } catch (err) {
+          handleError(err);
+        }
+      },
+    )
+    .command(
+      'inbox:hide-comment <postId> <commentId>',
+      'Hide a comment',
+      (y) =>
+        y
+          .positional('postId', { type: 'string', describe: 'Post ID', demandOption: true })
+          .positional('commentId', { type: 'string', describe: 'Comment ID', demandOption: true })
+          .option('accountId', { type: 'string', describe: 'Account ID', demandOption: true }),
+      async (argv) => {
+        try {
+          const late = createClient();
+          const { data } = await late.comments.hideInboxComment({ path: { postId: argv.postId!, commentId: argv.commentId! }, body: { accountId: argv.accountId! } as any });
+          output(data, argv.pretty as boolean);
+        } catch (err) {
+          handleError(err);
+        }
+      },
+    )
+    .command(
+      'inbox:unhide-comment <postId> <commentId>',
+      'Unhide a comment',
+      (y) =>
+        y
+          .positional('postId', { type: 'string', describe: 'Post ID', demandOption: true })
+          .positional('commentId', { type: 'string', describe: 'Comment ID', demandOption: true })
+          .option('accountId', { type: 'string', describe: 'Account ID', demandOption: true }),
+      async (argv) => {
+        try {
+          const late = createClient();
+          const { data } = await late.comments.unhideInboxComment({ path: { postId: argv.postId!, commentId: argv.commentId! }, query: { accountId: argv.accountId! } as any });
+          output(data, argv.pretty as boolean);
+        } catch (err) {
+          handleError(err);
+        }
+      },
+    )
+    .command(
+      'inbox:like-comment <postId> <commentId>',
+      'Like a comment',
+      (y) =>
+        y
+          .positional('postId', { type: 'string', describe: 'Post ID', demandOption: true })
+          .positional('commentId', { type: 'string', describe: 'Comment ID', demandOption: true })
+          .option('accountId', { type: 'string', describe: 'Account ID', demandOption: true }),
+      async (argv) => {
+        try {
+          const late = createClient();
+          const { data } = await late.comments.likeInboxComment({ path: { postId: argv.postId!, commentId: argv.commentId! }, body: { accountId: argv.accountId! } as any });
+          output(data, argv.pretty as boolean);
+        } catch (err) {
+          handleError(err);
+        }
+      },
+    )
+    .command(
+      'inbox:unlike-comment <postId> <commentId>',
+      'Unlike a comment',
+      (y) =>
+        y
+          .positional('postId', { type: 'string', describe: 'Post ID', demandOption: true })
+          .positional('commentId', { type: 'string', describe: 'Comment ID', demandOption: true })
+          .option('accountId', { type: 'string', describe: 'Account ID', demandOption: true }),
+      async (argv) => {
+        try {
+          const late = createClient();
+          const { data } = await late.comments.unlikeInboxComment({ path: { postId: argv.postId!, commentId: argv.commentId! }, query: { accountId: argv.accountId! } as any });
+          output(data, argv.pretty as boolean);
+        } catch (err) {
+          handleError(err);
+        }
+      },
+    )
+    .command(
+      'inbox:private-reply <postId> <commentId>',
+      'Send a private reply (DM) to a commenter',
+      (y) =>
+        y
+          .positional('postId', { type: 'string', describe: 'Post ID', demandOption: true })
+          .positional('commentId', { type: 'string', describe: 'Comment ID', demandOption: true })
+          .option('accountId', { type: 'string', describe: 'Account ID', demandOption: true })
+          .option('message', { type: 'string', describe: 'Private reply text', demandOption: true }),
+      async (argv) => {
+        try {
+          const late = createClient();
+          const { data } = await late.comments.sendPrivateReplyToComment({ path: { postId: argv.postId!, commentId: argv.commentId! }, body: { accountId: argv.accountId!, message: argv.message! } as any });
+          output(data, argv.pretty as boolean);
+        } catch (err) {
+          handleError(err);
+        }
+      },
     );
 }
