@@ -18,6 +18,7 @@ import { registerApiKeyCommands } from './commands/api-keys.js';
 import { registerUsageCommands } from './commands/usage.js';
 import { registerLogsCommands } from './commands/logs.js';
 import { registerTrackingTagCommands } from './commands/tracking-tags.js';
+import { registerGeneratedCommands } from './commands/generated.js';
 
 /**
  * Zernio CLI - Schedule posts, manage inbox, broadcasts, sequences, and automations across 14 platforms.
@@ -60,6 +61,8 @@ cli = registerApiKeyCommands(cli);
 cli = registerUsageCommands(cli);
 cli = registerLogsCommands(cli);
 cli = registerTrackingTagCommands(cli);
+// Auto-generated commands for every other API operation (see scripts/generate-commands.mjs).
+cli = registerGeneratedCommands(cli);
 
 // Parse and execute
 cli.parse();

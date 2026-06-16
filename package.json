@@ -16,7 +16,8 @@
   "scripts": {
     "build": "tsup",
     "dev": "tsup --watch",
-    "prepublishOnly": "npm run build"
+    "prepublishOnly": "npm run build",
+    "gen": "node scripts/generate-commands.mjs"
   },
   "keywords": [
     "social-media",
@@ -49,6 +50,7 @@
     "@types/node": "^20.11.0",
     "@types/yargs": "^17.0.32",
     "tsup": "^8.0.1",
-    "typescript": "^5.3.3"
+    "typescript": "^5.3.3",
+    "yaml": "^2.9.0"
   }
 }
