@@ -1,7 +1,54 @@
+import { readFileSync } from 'node:fs';
 import type { Argv } from 'yargs';
 import { createClient } from '../client.js';
 import { output, outputError } from '../utils/output.js';
 import { handleError } from '../utils/errors.js';
+
+/**
+ * Parse a thread file for posts:create --thread-file. Accepts either a JSON array
+ * (same shape as --threadItems) or plain text where tweets are separated by a line
+ * containing only "---". Returns the threadItems array (threadItems[0] is the root).
+ * Adapted from @mrgoonie's contribution in zernio-cli#6.
+ */
+function parseThreadFile(path: string): Array<Record<string, unknown>> {
+  let raw: string;
+  try {
+    raw = readFileSync(path, 'utf8');
+  } catch {
+    return outputError(`Could not read --thread-file: ${path}`, 400);
+  }
+  const trimmed = raw.trim();
+  if (!trimmed) return outputError('--thread-file is empty.', 400);
+
+  if (trimmed.startsWith('[')) {
+    let parsed: unknown;
+    try {
+      parsed = JSON.parse(trimmed);
+    } catch {
+      return outputError('--thread-file contains invalid JSON.', 400);
+    }
+    if (!Array.isArray(parsed)) return outputError('--thread-file JSON must be an array.', 400);
+    return parsed as Array<Record<string, unknown>>;
+  }
+
+  // Plain text: split on lines that contain only "---".
+  const items: Array<Record<string, unknown>> = [];
+  let current: string[] = [];
+  const flush = () => {
+    const content = current.join('\n').trim();
+    if (content) items.push({ content });
+    current = [];
+  };
+  for (const line of raw.split(/\r?\n/)) {
+    if (line.trim() === '---') flush();
+    else current.push(line);
+  }
+  flush();
+  if (!items.length) {
+    return outputError('--thread-file produced no tweets (separate tweets with a line containing only "---").', 400);
+  }
+  return items;
+}
 
 /** Parse a JSON-string CLI flag, exiting with a structured 400 error on invalid JSON. */
 function parseJsonFlag(raw: string, flag: string, hint: string): any {
@@ -37,6 +84,11 @@ export function registerPostCommands(yargs: Argv): Argv {
             type: 'string',
             describe:
               'X/Twitter: JSON array of tweets to publish as a native thread; threadItems[0] is the root, the rest are chained replies. e.g. \'[{"content":"first"},{"content":"second"}]\'',
+          })
+          .option('thread-file', {
+            type: 'string',
+            describe:
+              'X/Twitter: path to a thread file. Either a JSON array (same shape as --threadItems) or plain text with tweets separated by a line containing only "---". Mutually exclusive with --threadItems.',
           })
           // Content-disclosure flags, mapped to platformSpecificData on the relevant target.
           .option('paidPartnership', { type: 'boolean', describe: 'X/Twitter: mark the post as a paid partnership' })
@@ -76,6 +128,9 @@ export function registerPostCommands(yargs: Argv): Argv {
           if (argv.quoteTweetId) twitterData.quoteTweetId = argv.quoteTweetId;
           if (argv.replyToTweetId) twitterData.replyToTweetId = argv.replyToTweetId;
           if (argv.replySettings) twitterData.replySettings = argv.replySettings;
+          if (argv.threadItems && argv['thread-file']) {
+            outputError('Use either --threadItems or --thread-file, not both.', 400);
+          }
           if (argv.threadItems) {
             try {
               twitterData.threadItems = JSON.parse(argv.threadItems as string);
@@ -85,6 +140,8 @@ export function registerPostCommands(yargs: Argv): Argv {
                 400,
               );
             }
+          } else if (argv['thread-file']) {
+            twitterData.threadItems = parseThreadFile(argv['thread-file'] as string);
           }
           if (argv.paidPartnership) twitterData.paidPartnership = true;
           if (argv.sensitiveMedia) twitterData.sensitiveMedia = { other: true };
