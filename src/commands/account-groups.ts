@@ -27,7 +27,7 @@ export function registerAccountGroupCommands(yargs: Argv): Argv {
         y
           .option('name', { type: 'string', describe: 'Group name', demandOption: true })
           .option('accountIds', { type: 'string', describe: 'Comma-separated account IDs', demandOption: true })
-          .option('profileId', { type: 'string', describe: 'Profile ID' }),
+          .option('profileId', { type: 'string', describe: 'Deprecated and ignored by the server (groups are no longer scoped to a profile). Kept for backward compatibility.' }),
       async (argv) => {
         try {
           const late = createClient();

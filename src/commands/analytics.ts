@@ -12,6 +12,7 @@ export function registerAnalyticsCommands(yargs: Argv): Argv {
       (y) =>
         y
           .option('profileId', { type: 'string', describe: 'Filter by profile ID' })
+          .option('accountId', { type: 'string', describe: 'Filter by social account ID' })
           .option('platform', { type: 'string', describe: 'Filter by platform' })
           .option('postId', { type: 'string', describe: 'Get analytics for a specific post' })
           .option('source', { type: 'string', describe: 'Filter by source (late, external, all)' })
@@ -31,6 +32,7 @@ export function registerAnalyticsCommands(yargs: Argv): Argv {
             order: argv.order,
           };
           if (argv.profileId) query.profileId = argv.profileId;
+          if (argv.accountId) query.accountId = argv.accountId;
           if (argv.platform) query.platform = argv.platform;
           if (argv.postId) query.postId = argv.postId;
           if (argv.source) query.source = argv.source;
@@ -50,7 +52,9 @@ export function registerAnalyticsCommands(yargs: Argv): Argv {
       (y) =>
         y
           .option('profileId', { type: 'string', describe: 'Filter by profile ID' })
+          .option('accountId', { type: 'string', describe: 'Filter by social account ID' })
           .option('platform', { type: 'string', describe: 'Filter by platform' })
+          .option('source', { type: 'string', describe: 'Filter by post origin (all, late, external)' })
           .option('from', { type: 'string', describe: 'Start date (ISO 8601)' })
           .option('to', { type: 'string', describe: 'End date (ISO 8601)' }),
       async (argv) => {
@@ -58,7 +62,9 @@ export function registerAnalyticsCommands(yargs: Argv): Argv {
           const late = createClient();
           const query: Record<string, any> = {};
           if (argv.profileId) query.profileId = argv.profileId;
+          if (argv.accountId) query.accountId = argv.accountId;
           if (argv.platform) query.platform = argv.platform;
+          if (argv.source) query.source = argv.source;
           if (argv.from) query.fromDate = argv.from;
           if (argv.to) query.toDate = argv.to;
 
@@ -75,13 +81,17 @@ export function registerAnalyticsCommands(yargs: Argv): Argv {
       (y) =>
         y
           .option('profileId', { type: 'string', describe: 'Filter by profile ID' })
-          .option('platform', { type: 'string', describe: 'Filter by platform' }),
+          .option('accountId', { type: 'string', describe: 'Filter by social account ID' })
+          .option('platform', { type: 'string', describe: 'Filter by platform' })
+          .option('source', { type: 'string', describe: 'Filter by post origin (all, late, external)' }),
       async (argv) => {
         try {
           const late = createClient();
           const query: Record<string, any> = {};
           if (argv.profileId) query.profileId = argv.profileId;
+          if (argv.accountId) query.accountId = argv.accountId;
           if (argv.platform) query.platform = argv.platform;
+          if (argv.source) query.source = argv.source;
 
           const { data } = await late.analytics.getBestTimeToPost({ query });
           output(data, argv.pretty as boolean);

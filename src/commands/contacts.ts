@@ -51,9 +51,12 @@ export function registerContactCommands(yargs: Argv): Argv {
           .option('email', { type: 'string', describe: 'Email address' })
           .option('company', { type: 'string', describe: 'Company name' })
           .option('tags', { type: 'string', describe: 'Comma-separated tags' })
+          .option('isSubscribed', { type: 'boolean', describe: 'Subscription status' })
+          .option('notes', { type: 'string', describe: 'Contact notes' })
           .option('accountId', { type: 'string', describe: 'Account ID (creates a channel if provided with platform + platformIdentifier)' })
           .option('platform', { type: 'string', describe: 'Platform for initial channel' })
-          .option('platformIdentifier', { type: 'string', describe: 'Platform user ID for initial channel' }),
+          .option('platformIdentifier', { type: 'string', describe: 'Platform user ID for initial channel' })
+          .option('displayIdentifier', { type: 'string', describe: 'Human-readable identifier for the initial channel' }),
       async (argv) => {
         try {
           const late = createClient();
@@ -64,9 +67,12 @@ export function registerContactCommands(yargs: Argv): Argv {
           if (argv.email) body.email = argv.email;
           if (argv.company) body.company = argv.company;
           if (argv.tags) body.tags = argv.tags.split(',').map((s: string) => s.trim());
+          if (argv.isSubscribed !== undefined) body.isSubscribed = argv.isSubscribed;
+          if (argv.notes) body.notes = argv.notes;
           if (argv.accountId) body.accountId = argv.accountId;
           if (argv.platform) body.platform = argv.platform;
           if (argv.platformIdentifier) body.platformIdentifier = argv.platformIdentifier;
+          if (argv.displayIdentifier) body.displayIdentifier = argv.displayIdentifier;
 
           const { data } = await late.contacts.createContact({ body: body as any });
           output(data, argv.pretty as boolean);
@@ -98,6 +104,7 @@ export function registerContactCommands(yargs: Argv): Argv {
           .option('name', { type: 'string', describe: 'Contact name' })
           .option('email', { type: 'string', describe: 'Email address' })
           .option('company', { type: 'string', describe: 'Company name' })
+          .option('avatarUrl', { type: 'string', describe: 'Avatar image URL' })
           .option('tags', { type: 'string', describe: 'Comma-separated tags (replaces existing)' })
           .option('isSubscribed', { type: 'boolean', describe: 'Subscription status' })
           .option('isBlocked', { type: 'boolean', describe: 'Block status' })
@@ -109,6 +116,7 @@ export function registerContactCommands(yargs: Argv): Argv {
           if (argv.name) body.name = argv.name;
           if (argv.email) body.email = argv.email;
           if (argv.company) body.company = argv.company;
+          if (argv.avatarUrl) body.avatarUrl = argv.avatarUrl;
           if (argv.tags) body.tags = argv.tags.split(',').map((s: string) => s.trim());
           if (argv.isSubscribed !== undefined) body.isSubscribed = argv.isSubscribed;
           if (argv.isBlocked !== undefined) body.isBlocked = argv.isBlocked;

@@ -97,13 +97,20 @@ export function registerAccountCommands(yargs: Argv): Argv {
         y
           .positional('id', { type: 'string', describe: 'Account ID', demandOption: true })
           .option('username', { type: 'string', describe: 'New username' })
-          .option('displayName', { type: 'string', describe: 'New display name' }),
+          .option('displayName', { type: 'string', describe: 'New display name' })
+          .option('x-analytics', { type: 'boolean', describe: 'X/Twitter only: enable periodic analytics reads (billed pass-through per X API call)' })
+          .option('x-inbox', { type: 'boolean', describe: 'X/Twitter only: enable DM polling and inbox sync (billed pass-through per X API call)' }),
       async (argv) => {
         try {
           const late = createClient();
           const body: Record<string, unknown> = {};
           if (argv.username !== undefined) body.username = argv.username;
           if (argv.displayName !== undefined) body.displayName = argv.displayName;
+          // Only include the sub-fields actually passed so unset ones aren't overwritten server-side.
+          const xCapabilities: Record<string, boolean> = {};
+          if (argv['x-analytics'] !== undefined) xCapabilities.analytics = argv['x-analytics'] as boolean;
+          if (argv['x-inbox'] !== undefined) xCapabilities.inbox = argv['x-inbox'] as boolean;
+          if (Object.keys(xCapabilities).length > 0) body.xCapabilities = xCapabilities;
           const { data } = await late.accounts.updateAccount({ path: { accountId: argv.id! }, body: body as any });
           output(data, argv.pretty as boolean);
         } catch (err) {

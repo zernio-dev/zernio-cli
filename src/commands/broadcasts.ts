@@ -1,6 +1,6 @@
 import type { Argv } from 'yargs';
 import { createClient } from '../client.js';
-import { output } from '../utils/output.js';
+import { output, outputError } from '../utils/output.js';
 import { handleError } from '../utils/errors.js';
 
 /**
@@ -45,9 +45,13 @@ export function registerBroadcastCommands(yargs: Argv): Argv {
           .option('accountId', { type: 'string', describe: 'Account ID', demandOption: true })
           .option('platform', { type: 'string', describe: 'Platform', demandOption: true })
           .option('name', { type: 'string', describe: 'Broadcast name', demandOption: true })
+          .option('description', { type: 'string', describe: 'Broadcast description' })
           .option('message', { type: 'string', describe: 'Message text (for non-WhatsApp platforms)' })
           .option('templateName', { type: 'string', describe: 'WhatsApp template name' })
-          .option('templateLanguage', { type: 'string', describe: 'WhatsApp template language code' }),
+          .option('templateLanguage', { type: 'string', describe: 'WhatsApp template language code' })
+          .option('variableMapping', { type: 'string', describe: 'JSON map of WhatsApp template variable positions to contact fields, resolved per recipient (e.g. \'{"1":{"field":"name"}}\')' })
+          .option('attachments', { type: 'string', describe: 'JSON array of message attachments (e.g. \'[{"type":"image","url":"..."}]\')' })
+          .option('segmentFilters', { type: 'string', describe: 'JSON recipient segment filters (e.g. \'{"tags":["vip"],"isSubscribed":true}\')' }),
       async (argv) => {
         try {
           const late = createClient();
@@ -57,6 +61,7 @@ export function registerBroadcastCommands(yargs: Argv): Argv {
             platform: argv.platform,
             name: argv.name,
           };
+          if (argv.description) body.description = argv.description;
 
           // WhatsApp uses templates, other platforms use direct messages
           if (argv.templateName) {
@@ -66,6 +71,40 @@ export function registerBroadcastCommands(yargs: Argv): Argv {
             };
           } else if (argv.message) {
             body.message = { text: argv.message };
+          }
+
+          // Per-recipient WhatsApp template variable mapping merges into the template object
+          if (argv.variableMapping) {
+            try {
+              body.template = { ...(body.template || {}), variableMapping: JSON.parse(argv.variableMapping as string) };
+            } catch {
+              outputError(
+                '--variableMapping must be a valid JSON object, e.g. \'{"1":{"field":"name"}}\'',
+                400,
+              );
+            }
+          }
+
+          if (argv.attachments) {
+            try {
+              body.message = { ...(body.message || {}), attachments: JSON.parse(argv.attachments as string) };
+            } catch {
+              outputError(
+                '--attachments must be a valid JSON array, e.g. \'[{"type":"image","url":"..."}]\'',
+                400,
+              );
+            }
+          }
+
+          if (argv.segmentFilters) {
+            try {
+              body.segmentFilters = JSON.parse(argv.segmentFilters as string);
+            } catch {
+              outputError(
+                '--segmentFilters must be a valid JSON object, e.g. \'{"tags":["vip"],"isSubscribed":true}\'',
+                400,
+              );
+            }
           }
 
           const { data } = await late.broadcasts.createBroadcast({ body: body as any });
@@ -96,12 +135,19 @@ export function registerBroadcastCommands(yargs: Argv): Argv {
         y
           .positional('id', { type: 'string', describe: 'Broadcast ID', demandOption: true })
           .option('name', { type: 'string', describe: 'Broadcast name' })
+          .option('description', { type: 'string', describe: 'Broadcast description' })
           .option('message', { type: 'string', describe: 'Message text' }),
       async (argv) => {
         try {
           const late = createClient();
+          const body: Record<string, any> = {};
+          if (argv.name) body.name = argv.name;
+          if (argv.description) body.description = argv.description;
+          if (argv.message) body.message = { text: argv.message };
+
           const { data } = await late.broadcasts.updateBroadcast({
             path: { broadcastId: argv.id! },
+            body: body as any,
           });
           output(data, argv.pretty as boolean);
         } catch (err) {

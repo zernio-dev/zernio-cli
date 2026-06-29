@@ -43,6 +43,7 @@ export function registerSequenceCommands(yargs: Argv): Argv {
           .option('accountId', { type: 'string', describe: 'Account ID', demandOption: true })
           .option('platform', { type: 'string', describe: 'Platform', demandOption: true })
           .option('name', { type: 'string', describe: 'Sequence name', demandOption: true })
+          .option('description', { type: 'string', describe: 'Sequence description' })
           .option('stepsFile', { type: 'string', describe: 'Path to JSON file with steps array' })
           .option('exitOnReply', { type: 'boolean', describe: 'Exit sequence when contact replies', default: true })
           .option('exitOnUnsubscribe', { type: 'boolean', describe: 'Exit sequence when contact unsubscribes', default: true }),
@@ -57,6 +58,7 @@ export function registerSequenceCommands(yargs: Argv): Argv {
             exitOnReply: argv.exitOnReply,
             exitOnUnsubscribe: argv.exitOnUnsubscribe,
           };
+          if (argv.description) body.description = argv.description;
 
           // Steps can be provided via a JSON file for complex sequences
           if (argv.stepsFile) {
@@ -93,14 +95,29 @@ export function registerSequenceCommands(yargs: Argv): Argv {
         y
           .positional('id', { type: 'string', describe: 'Sequence ID', demandOption: true })
           .option('name', { type: 'string', describe: 'Sequence name' })
+          .option('description', { type: 'string', describe: 'Sequence description' })
           .option('stepsFile', { type: 'string', describe: 'Path to JSON file with steps array' })
           .option('exitOnReply', { type: 'boolean', describe: 'Exit on reply' })
           .option('exitOnUnsubscribe', { type: 'boolean', describe: 'Exit on unsubscribe' }),
       async (argv) => {
         try {
           const late = createClient();
+          const body: Record<string, any> = {};
+          if (argv.name) body.name = argv.name;
+          if (argv.description) body.description = argv.description;
+          if (argv.exitOnReply !== undefined) body.exitOnReply = argv.exitOnReply;
+          if (argv.exitOnUnsubscribe !== undefined) body.exitOnUnsubscribe = argv.exitOnUnsubscribe;
+
+          // Steps can be replaced via a JSON file (draft or paused sequences only)
+          if (argv.stepsFile) {
+            const { readFileSync } = await import('fs');
+            const raw = readFileSync(argv.stepsFile, 'utf-8');
+            body.steps = JSON.parse(raw);
+          }
+
           const { data } = await late.sequences.updateSequence({
             path: { sequenceId: argv.id! },
+            body: body as any,
           });
           output(data, argv.pretty as boolean);
         } catch (err) {

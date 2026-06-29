@@ -1,6 +1,6 @@
 import type { Argv } from 'yargs';
 import { createClient } from '../client.js';
-import { output } from '../utils/output.js';
+import { output, outputError } from '../utils/output.js';
 import { handleError } from '../utils/errors.js';
 
 /**
@@ -34,13 +34,14 @@ export function registerAutomationCommands(yargs: Argv): Argv {
         y
           .option('profileId', { type: 'string', describe: 'Profile ID', demandOption: true })
           .option('accountId', { type: 'string', describe: 'Account ID', demandOption: true })
-          .option('platformPostId', { type: 'string', describe: 'Platform-specific post ID', demandOption: true })
+          .option('platformPostId', { type: 'string', describe: 'Platform-specific post ID (omit for an account-wide / any-post automation)' })
           .option('name', { type: 'string', describe: 'Automation name', demandOption: true })
           .option('dmMessage', { type: 'string', describe: 'DM message to send', demandOption: true })
           .option('postId', { type: 'string', describe: 'Zernio post ID (optional)' })
           .option('postTitle', { type: 'string', describe: 'Post title for display' })
           .option('keywords', { type: 'string', describe: 'Comma-separated trigger keywords (empty = all comments)' })
           .option('matchMode', { type: 'string', describe: 'Keyword match mode (exact, contains)', default: 'contains' })
+          .option('buttons', { type: 'string', describe: 'JSON array of inline DM buttons (1-3), e.g. \'[{"type":"url","title":"Shop","url":"..."}]\'' })
           .option('commentReply', { type: 'string', describe: 'Optional public comment reply text' }),
       async (argv) => {
         try {
@@ -48,14 +49,24 @@ export function registerAutomationCommands(yargs: Argv): Argv {
           const body: Record<string, any> = {
             profileId: argv.profileId,
             accountId: argv.accountId,
-            platformPostId: argv.platformPostId,
             name: argv.name,
             dmMessage: argv.dmMessage,
             matchMode: argv.matchMode,
           };
+          if (argv.platformPostId) body.platformPostId = argv.platformPostId;
           if (argv.postId) body.postId = argv.postId;
           if (argv.postTitle) body.postTitle = argv.postTitle;
           if (argv.keywords) body.keywords = argv.keywords.split(',').map((s: string) => s.trim());
+          if (argv.buttons) {
+            try {
+              body.buttons = JSON.parse(argv.buttons as string);
+            } catch {
+              outputError(
+                '--buttons must be a valid JSON array, e.g. \'[{"type":"url","title":"Shop","url":"https://..."}]\'',
+                400,
+              );
+            }
+          }
           if (argv.commentReply) body.commentReply = argv.commentReply;
 
           const { data } = await late.commentautomations.createCommentAutomation({ body: body as any });
@@ -91,6 +102,7 @@ export function registerAutomationCommands(yargs: Argv): Argv {
           .option('keywords', { type: 'string', describe: 'Comma-separated trigger keywords' })
           .option('matchMode', { type: 'string', describe: 'Keyword match mode (exact, contains)' })
           .option('dmMessage', { type: 'string', describe: 'DM message to send' })
+          .option('buttons', { type: 'string', describe: 'JSON array of inline DM buttons (1-3); pass [] to clear all buttons' })
           .option('commentReply', { type: 'string', describe: 'Public comment reply text' })
           .option('isActive', { type: 'boolean', describe: 'Enable or disable the automation' }),
       async (argv) => {
@@ -101,6 +113,16 @@ export function registerAutomationCommands(yargs: Argv): Argv {
           if (argv.keywords) body.keywords = argv.keywords.split(',').map((s: string) => s.trim());
           if (argv.matchMode) body.matchMode = argv.matchMode;
           if (argv.dmMessage) body.dmMessage = argv.dmMessage;
+          if (argv.buttons) {
+            try {
+              body.buttons = JSON.parse(argv.buttons as string);
+            } catch {
+              outputError(
+                '--buttons must be a valid JSON array, e.g. \'[{"type":"url","title":"Shop","url":"https://..."}]\'',
+                400,
+              );
+            }
+          }
           if (argv.commentReply) body.commentReply = argv.commentReply;
           if (argv.isActive !== undefined) body.isActive = argv.isActive;
 

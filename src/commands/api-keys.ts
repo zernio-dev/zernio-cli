@@ -26,7 +26,7 @@ export function registerApiKeyCommands(yargs: Argv): Argv {
       (y) =>
         y
           .option('name', { type: 'string', describe: 'Key name/label', demandOption: true })
-          .option('expiresIn', { type: 'number', describe: 'Expiry in seconds (omit for no expiry)' })
+          .option('expiresIn', { type: 'number', describe: 'Expiry in days (omit for no expiry)' })
           .option('scope', { type: 'string', describe: 'Key scope' })
           .option('permission', { type: 'string', describe: 'Permission level' })
           .option('profileIds', { type: 'string', describe: 'Comma-separated profile IDs to scope the key to' }),
