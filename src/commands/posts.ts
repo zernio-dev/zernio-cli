@@ -19,7 +19,16 @@ export function registerPostCommands(yargs: Argv): Argv {
           .option('title', { type: 'string', describe: 'Post title (YouTube, Reddit, etc.)' })
           .option('tags', { type: 'string', describe: 'Comma-separated tags' })
           .option('hashtags', { type: 'string', describe: 'Comma-separated hashtags' })
-          .option('timezone', { type: 'string', describe: 'Timezone (e.g. America/New_York)' }),
+          .option('timezone', { type: 'string', describe: 'Timezone (e.g. America/New_York)' })
+          // X/Twitter native options, passed through as platformSpecificData on the X target.
+          .option('quoteTweetId', { type: 'string', describe: 'X/Twitter: ID or status URL of a tweet to quote-repost' })
+          .option('replyToTweetId', { type: 'string', describe: 'X/Twitter: ID of a tweet to reply to (the first tweet replies to it)' })
+          .option('replySettings', { type: 'string', describe: 'X/Twitter: who can reply (following | mentionedUsers | everyone)' })
+          .option('threadItems', {
+            type: 'string',
+            describe:
+              'X/Twitter: JSON array of tweets to publish as a native thread; threadItems[0] is the root, the rest are chained replies. e.g. \'[{"content":"first"},{"content":"second"}]\'',
+          }),
       async (argv) => {
         try {
           const late = createClient();
@@ -29,12 +38,35 @@ export function registerPostCommands(yargs: Argv): Argv {
           const allAccounts = (accountsData as any)?.accounts || [];
           const accountIds = argv.accounts.split(',').map((s: string) => s.trim()).filter(Boolean);
 
+          // X/Twitter native options (quote, reply, thread) are passed through as
+          // platformSpecificData on the X platform target. threadItems[0] becomes the
+          // root tweet; later items are chained as replies.
+          const twitterData: Record<string, any> = {};
+          if (argv.quoteTweetId) twitterData.quoteTweetId = argv.quoteTweetId;
+          if (argv.replyToTweetId) twitterData.replyToTweetId = argv.replyToTweetId;
+          if (argv.replySettings) twitterData.replySettings = argv.replySettings;
+          if (argv.threadItems) {
+            try {
+              twitterData.threadItems = JSON.parse(argv.threadItems as string);
+            } catch {
+              outputError(
+                '--threadItems must be a valid JSON array, e.g. \'[{"content":"first tweet"},{"content":"second tweet"}]\'',
+                400,
+              );
+            }
+          }
+          const hasTwitterData = Object.keys(twitterData).length > 0;
+
           const platforms = accountIds.map((id: string) => {
             const account = allAccounts.find((a: any) => (a._id || a.id) === id);
             if (!account) {
               outputError(`Account ${id} not found. Run "late accounts:list" to see available accounts.`, 404);
             }
-            return { platform: account.platform, accountId: id };
+            const entry: Record<string, any> = { platform: account.platform, accountId: id };
+            if (hasTwitterData && (account.platform === 'twitter' || account.platform === 'x')) {
+              entry.platformSpecificData = twitterData;
+            }
+            return entry;
           });
 
           // Build media items
