@@ -28,7 +28,11 @@ export function registerPostCommands(yargs: Argv): Argv {
             type: 'string',
             describe:
               'X/Twitter: JSON array of tweets to publish as a native thread; threadItems[0] is the root, the rest are chained replies. e.g. \'[{"content":"first"},{"content":"second"}]\'',
-          }),
+          })
+          // Content-disclosure flags, mapped to platformSpecificData on the relevant target.
+          .option('paidPartnership', { type: 'boolean', describe: 'X/Twitter: mark the post as a paid partnership' })
+          .option('sensitiveMedia', { type: 'boolean', describe: 'X/Twitter: flag attached media as sensitive (adds a sensitive-media warning)' })
+          .option('aiGenerated', { type: 'boolean', describe: 'Instagram: mark the content as AI-generated (sets is_ai_generated)' }),
       async (argv) => {
         try {
           const late = createClient();
@@ -55,7 +59,14 @@ export function registerPostCommands(yargs: Argv): Argv {
               );
             }
           }
+          if (argv.paidPartnership) twitterData.paidPartnership = true;
+          if (argv.sensitiveMedia) twitterData.sensitiveMedia = { other: true };
           const hasTwitterData = Object.keys(twitterData).length > 0;
+
+          // Instagram content disclosure.
+          const instagramData: Record<string, any> = {};
+          if (argv.aiGenerated) instagramData.isAiGenerated = true;
+          const hasInstagramData = Object.keys(instagramData).length > 0;
 
           const platforms = accountIds.map((id: string) => {
             const account = allAccounts.find((a: any) => (a._id || a.id) === id);
@@ -65,6 +76,9 @@ export function registerPostCommands(yargs: Argv): Argv {
             const entry: Record<string, any> = { platform: account.platform, accountId: id };
             if (hasTwitterData && (account.platform === 'twitter' || account.platform === 'x')) {
               entry.platformSpecificData = twitterData;
+            }
+            if (hasInstagramData && account.platform === 'instagram') {
+              entry.platformSpecificData = { ...(entry.platformSpecificData || {}), ...instagramData };
             }
             return entry;
           });
