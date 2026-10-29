@@ -18,6 +18,7 @@ export function registerAccountCommands(yargs: Argv): Argv {
           const late = createClient();
           const query: Record<string, any> = {};
           if (argv.profileId) query.profileId = argv.profileId;
+          if (argv.platform) query.platform = argv.platform;
 
           const { data } = await late.accounts.listAccounts({ query });
           output(data, argv.pretty as boolean);
