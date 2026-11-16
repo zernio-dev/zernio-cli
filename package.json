@@ -42,7 +42,7 @@
     "url": "https://github.com/zernio-dev/zernio-cli"
   },
   "dependencies": {
-    "@zernio/node": "^0.2.262",
+    "@zernio/node": "^0.2.1664",
     "open": "^10.1.0",
     "yargs": "^17.7.2"
   },
