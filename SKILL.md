@@ -1,7 +1,7 @@
 ---
 name: zernio
-description: Schedule posts, manage inbox, broadcasts, sequences, and automations across 14 platforms from the CLI
-version: 0.2.0
+description: Schedule posts, manage inbox, broadcasts, sequences, and automations across 18 platforms from the CLI
+version: 0.5.0
 homepage: https://docs.zernio.com
 tags: [social-media, scheduling, instagram, tiktok, twitter, linkedin, facebook, threads, youtube, bluesky, pinterest, reddit, snapchat, telegram]
 metadata:
@@ -12,7 +12,7 @@ metadata:
 
 # Zernio CLI
 
-Schedule and publish social media posts across 13 platforms (Instagram, TikTok, X/Twitter, LinkedIn, Facebook, Threads, YouTube, Bluesky, Pinterest, Reddit, Snapchat, Telegram, Google Business) from any terminal or AI agent.
+Schedule and publish social media posts across 18 platforms (Instagram, TikTok, X/Twitter, LinkedIn, Facebook, YouTube, Threads, Pinterest, Bluesky, Google Business, Snapchat, WhatsApp, Telegram, Discord, Slack, iMessage, LINE, WeChat) from any terminal or AI agent.
 
 ## Setup
 
@@ -196,7 +196,7 @@ zernio posts:create --text "Thoughts on AI agents..." --accounts <threadsId>,<tw
 
 ## Supported Platforms
 
-Instagram, TikTok, X (Twitter), LinkedIn, Facebook, Threads, YouTube, Bluesky, Pinterest, Reddit, Snapchat, Telegram, Google Business Profile.
+Instagram, TikTok, X (Twitter), LinkedIn, Facebook, YouTube, Threads, Pinterest, Bluesky, Google Business Profile, Snapchat, WhatsApp, Telegram, Discord, Slack, iMessage, LINE, WeChat.
 
 ## Error Handling
 
@@ -327,10 +327,10 @@ zernio sequences:unenroll <sequenceId> <contactId>
 
 ```bash
 # List automations
-zernio automations:list --profileId <id>
+zernio comment-automations:list --profileId <id>
 
 # Create: auto-DM anyone who comments "info" on a post
-zernio automations:create \
+zernio comment-automations:create \
   --profileId <id> --accountId <id> \
   --platformPostId <igPostId> \
   --name "Lead Magnet" \
@@ -339,22 +339,22 @@ zernio automations:create \
   --commentReply "Check your DMs!"
 
 # Trigger on ALL comments (no keywords filter)
-zernio automations:create \
+zernio comment-automations:create \
   --profileId <id> --accountId <id> \
   --platformPostId <igPostId> \
   --name "Engagement Boost" \
   --dmMessage "Thanks for engaging! Here's a special offer..."
 
 # Update
-zernio automations:update <automationId> --isActive false
-zernio automations:update <automationId> --keywords "buy,order" --matchMode exact
+zernio comment-automations:update <automationId> --isActive false
+zernio comment-automations:update <automationId> --keywords "buy,order" --matchMode exact
 
 # View trigger logs
-zernio automations:logs <automationId> --status sent
-zernio automations:logs <automationId> --status failed
+zernio comment-automations:logs <automationId> --status sent
+zernio comment-automations:logs <automationId> --status failed
 
 # Delete
-zernio automations:delete <automationId>
+zernio comment-automations:delete <automationId>
 ```
 
 ## Tips for AI Agents

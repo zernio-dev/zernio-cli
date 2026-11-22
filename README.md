@@ -1,6 +1,6 @@
 # Zernio CLI
 
-Schedule posts, manage inbox, broadcasts, sequences, and automations across 16 platforms from the terminal.
+Schedule posts, manage inbox, broadcasts, sequences, and automations across 18 platforms from the terminal.
 
 Built for developers and AI agents. Outputs JSON by default.
 
@@ -117,13 +117,13 @@ zernio auth:check
 | `zernio sequences:enroll <id>` | Enroll contacts |
 | `zernio sequences:unenroll <id> <contactId>` | Unenroll contact |
 | `zernio sequences:enrollments <id>` | List enrollments |
-| **Automations** | |
-| `zernio automations:list` | List comment-to-DM automations |
-| `zernio automations:create` | Create automation |
-| `zernio automations:get <id>` | Get automation with logs |
-| `zernio automations:update <id>` | Update automation |
-| `zernio automations:delete <id>` | Delete automation |
-| `zernio automations:logs <id>` | List trigger logs |
+| **Comment-to-DM automations** | |
+| `zernio comment-automations:list` | List comment-to-DM automations |
+| `zernio comment-automations:create` | Create a comment-to-DM automation |
+| `zernio comment-automations:get <id>` | Get automation with logs |
+| `zernio comment-automations:update <id>` | Update automation |
+| `zernio comment-automations:delete <id>` | Delete automation |
+| `zernio comment-automations:logs <id>` | List trigger logs |
 
 ## Configuration
 
@@ -142,7 +142,7 @@ This CLI ships with a `SKILL.md` file for AI agent discovery (Claude Code, OpenC
 
 ## Supported Platforms
 
-Instagram, TikTok, X (Twitter), LinkedIn, Facebook, Threads, YouTube, Bluesky, Pinterest, Reddit, Snapchat, Telegram, Google Business Profile.
+Instagram, TikTok, X (Twitter), LinkedIn, Facebook, YouTube, Threads, Pinterest, Bluesky, Google Business Profile, Snapchat, WhatsApp, Telegram, Discord, Slack, iMessage, LINE, WeChat.
 
 ## License
 

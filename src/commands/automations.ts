@@ -9,7 +9,7 @@ import { handleError } from '../utils/errors.js';
 export function registerAutomationCommands(yargs: Argv): Argv {
   return yargs
     .command(
-      'automations:list',
+      'comment-automations:list',
       'List comment-to-DM automations',
       (y) =>
         y
@@ -28,7 +28,7 @@ export function registerAutomationCommands(yargs: Argv): Argv {
       },
     )
     .command(
-      'automations:create',
+      'comment-automations:create',
       'Create a comment-to-DM automation',
       (y) =>
         y
@@ -77,7 +77,7 @@ export function registerAutomationCommands(yargs: Argv): Argv {
       },
     )
     .command(
-      'automations:get <id>',
+      'comment-automations:get <id>',
       'Get automation details with recent logs',
       (y) => y.positional('id', { type: 'string', describe: 'Automation ID', demandOption: true }),
       async (argv) => {
@@ -93,7 +93,7 @@ export function registerAutomationCommands(yargs: Argv): Argv {
       },
     )
     .command(
-      'automations:update <id>',
+      'comment-automations:update <id>',
       'Update an automation',
       (y) =>
         y
@@ -137,7 +137,7 @@ export function registerAutomationCommands(yargs: Argv): Argv {
       },
     )
     .command(
-      'automations:delete <id>',
+      'comment-automations:delete <id>',
       'Delete an automation and all its logs',
       (y) => y.positional('id', { type: 'string', describe: 'Automation ID', demandOption: true }),
       async (argv) => {
@@ -153,7 +153,7 @@ export function registerAutomationCommands(yargs: Argv): Argv {
       },
     )
     .command(
-      'automations:logs <id>',
+      'comment-automations:logs <id>',
       'List trigger logs for an automation',
       (y) =>
         y

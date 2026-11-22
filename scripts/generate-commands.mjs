@@ -10,11 +10,13 @@
  *      what's actually callable.
  *   3. Scan src/commands/*.ts (except the generated file) for operationIds that
  *      are ALREADY hand-implemented (via `late.<ns>.<method>(` calls) and skip
- *      them — hand-written commands always win.
+ *      them — hand-written commands always win. A generated command whose name
+ *      equals a hand-written one fails the run, since yargs would keep only one.
  *   4. Emit src/commands/generated.ts with a yargs command per remaining op.
  *
- * Generated commands are intentionally "raw": path params -> positionals, query
- * params + body fields -> typed flags, passed straight through to the SDK. Run
+ * Generated commands are intentionally "raw": path params (operation or path
+ * level) -> positionals, query and header params + body fields -> typed flags,
+ * and `--body` takes the whole JSON body, passed straight through to the SDK. Run
  * `npm run gen` after an SDK bump to pick up new endpoints.
  */
 
@@ -99,14 +101,47 @@ function buildSdkMap() {
   return map;
 }
 
-function implementedOperationIds() {
+function scanHandWritten() {
   const ids = new Set();
+  const commands = new Set();
   for (const f of readdirSync(COMMANDS_DIR)) {
     if (!f.endsWith('.ts') || f === 'generated.ts') continue;
     const src = readFileSync(join(COMMANDS_DIR, f), 'utf8');
     for (const m of src.matchAll(/late\.[a-zA-Z]+\.([a-zA-Z]+)\(/g)) ids.add(m[1]);
+    for (const m of src.matchAll(/\.command\(\s*'([a-z0-9-]+:[a-z0-9-]+)/g)) commands.add(m[1]);
   }
-  return ids;
+  return { ids, commands };
+}
+
+// Operation params override path-level params of the same name and location.
+function mergedParameters(spec, pathItem, op) {
+  const byKey = new Map();
+  for (const raw of [...(pathItem.parameters || []), ...(op.parameters || [])]) {
+    const p = resolveRef(spec, raw);
+    byKey.set(`${p.in}:${p.name}`, p);
+  }
+  return [...byKey.values()];
+}
+
+// Top-level body fields, including those of allOf / oneOf / anyOf members.
+// Only allOf members' `required` lists are binding for the whole body.
+function bodyFields(spec, schemaRaw, seen = new Set()) {
+  const s = resolveRef(spec, schemaRaw);
+  const fields = new Map();
+  const add = (name, kind, required) => {
+    const prev = fields.get(name);
+    fields.set(name, { name, in: 'body', required: required || !!prev?.required, kind: prev?.kind ?? kind });
+  };
+  const req = new Set(s.required || []);
+  for (const [name, sch] of Object.entries(s.properties || {})) add(name, flagKind(spec, sch), req.has(name));
+  for (const [combinator, binding] of [['allOf', true], ['oneOf', false], ['anyOf', false]]) {
+    for (const member of s[combinator] || []) {
+      if (member.$ref && seen.has(member.$ref)) continue;
+      if (member.$ref) seen.add(member.$ref);
+      for (const f of bodyFields(spec, member, seen).values()) add(f.name, f.kind, binding && f.required);
+    }
+  }
+  return fields;
 }
 
 /* ── codegen ─────────────────────────────────────────────────────── */
@@ -119,11 +154,16 @@ function emitCommand(op) {
   for (const p of op.positionals) {
     builderLines.push(`          .positional('${p}', { type: 'string', describe: '${p}', demandOption: true })`);
   }
-  for (const f of [...op.query, ...op.body]) {
+  for (const f of [...op.query, ...op.headers, ...op.body]) {
     const yType = f.kind === 'boolean' ? 'boolean' : f.kind === 'number' ? 'number' : 'string';
-    const dem = f.required ? ', demandOption: true' : '';
+    // A body field can also arrive through the raw body flag, so only the API enforces it.
+    const dem = f.required && f.in !== 'body' ? ', demandOption: true' : '';
     const note = f.kind === 'string-array' ? ' (comma-separated)' : f.kind === 'json' ? ' (JSON)' : '';
-    builderLines.push(`          .option('${f.name}', { type: '${yType}', describe: '${f.in} param${note}'${dem} })`);
+    const req = f.required && f.in === 'body' ? ', required' : '';
+    builderLines.push(`          .option('${f.flag ?? f.name}', { type: '${yType}', describe: '${f.in} param${note}${req}'${dem} })`);
+  }
+  if (op.rawBodyFlag) {
+    builderLines.push(`          .option('${op.rawBodyFlag}', { type: 'string', describe: 'Whole request body (JSON); field flags override its keys' })`);
   }
   const builder = builderLines.length ? `(y) =>\n        y\n${builderLines.join('\n')}` : '(y) => y';
 
@@ -135,14 +175,19 @@ function emitCommand(op) {
     assigns.push(`          const query: Record<string, unknown> = {};`);
     for (const f of op.query) assigns.push(`          ${assignLine('query', f)}`);
   }
-  if (op.body.length) {
-    assigns.push(`          const body: Record<string, unknown> = {};`);
+  if (op.headers.length) {
+    assigns.push(`          const headers: Record<string, string> = {};`);
+    for (const f of op.headers) assigns.push(`          if (argv['${f.flag}'] !== undefined) headers['${f.name}'] = String(argv['${f.flag}']);`);
+  }
+  if (op.rawBodyFlag) {
+    assigns.push(`          const body: Record<string, unknown> = argv['${op.rawBodyFlag}'] !== undefined ? JSON.parse(String(argv['${op.rawBodyFlag}'])) : {};`);
     for (const f of op.body) assigns.push(`          ${assignLine('body', f)}`);
   }
   const callArgs = [
     op.positionals.length ? 'path' : null,
     op.query.length ? 'query: query as any' : null,
-    op.body.length ? 'body: body as any' : null,
+    op.headers.length ? 'headers' : null,
+    op.rawBodyFlag ? 'body: body as any' : null,
   ].filter(Boolean).join(', ');
   const callObj = callArgs ? `{ ${callArgs} }` : '';
 
@@ -178,7 +223,7 @@ function assignLine(target, f) {
 
 const spec = await loadSpec();
 const sdkMap = buildSdkMap();
-const implemented = implementedOperationIds();
+const { ids: implemented, commands: handWrittenCommands } = scanHandWritten();
 
 const ops = [];
 const seenCommands = new Set();
@@ -192,26 +237,23 @@ for (const [path, methods] of Object.entries(spec.paths || {})) {
     if (!ns) continue; // not exposed by the SDK
     if (implemented.has(opId)) continue; // hand-written wins
 
-    const params = (op.parameters || []).map((p) => resolveRef(spec, p));
+    const params = mergedParameters(spec, methods, op);
     const positionals = params.filter((p) => p.in === 'path').map((p) => p.name);
     const query = params
       .filter((p) => p.in === 'query')
       .map((p) => ({ name: p.name, in: 'query', required: !!p.required, kind: flagKind(spec, p.schema) }));
-    const bodySchema = resolveRef(spec, op.requestBody?.content?.['application/json']?.schema);
-    const req = new Set(bodySchema?.required || []);
-    const body = bodySchema?.properties
-      ? Object.entries(bodySchema.properties).map(([name, sch]) => ({
-          name,
-          in: 'body',
-          required: req.has(name),
-          kind: flagKind(spec, sch),
-        }))
-      : [];
+    const headers = params
+      .filter((p) => p.in === 'header')
+      .map((p) => ({ name: p.name, flag: kebab(p.name), in: 'header', required: !!p.required, kind: 'string' }));
+    const jsonBody = op.requestBody?.content?.['application/json'];
+    const body = jsonBody ? [...bodyFields(spec, jsonBody.schema).values()] : [];
+    const taken = new Set([...positionals, ...query.map((f) => f.name), ...headers.map((f) => f.flag), ...body.map((f) => f.name)]);
+    const rawBodyFlag = jsonBody ? ['body', 'raw-body', 'request-body'].find((flag) => !taken.has(flag)) : undefined;
 
     const prefix = ns.toLowerCase();
     const action = deriveAction(opId, prefix);
     (actionsByPrefix[prefix] ??= new Map()).set(opId, action);
-    ops.push({ opId, ns, method: opId, prefix, action, positionals, query, body, summary: op.summary || opId });
+    ops.push({ opId, ns, method: opId, prefix, action, positionals, query, headers, body, rawBodyFlag, summary: op.summary || opId });
   }
 }
 
@@ -222,6 +264,13 @@ for (const op of ops) {
   op.command = `${op.prefix}:${op.action}`;
   if (seenCommands.has(op.command)) op.command = `${op.prefix}:${kebab(op.opId)}`;
   seenCommands.add(op.command);
+}
+
+// yargs keeps the last command registered under a name, so a clash would silently
+// replace a hand-written command with a generated one (or the reverse).
+const clashes = ops.filter((op) => handWrittenCommands.has(op.command)).map((op) => op.command);
+if (clashes.length) {
+  throw new Error(`[generate-commands] generated commands clash with hand-written ones: ${clashes.join(', ')}. Rename the hand-written command.`);
 }
 
 ops.sort((a, b) => a.command.localeCompare(b.command));

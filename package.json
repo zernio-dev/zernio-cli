@@ -1,7 +1,7 @@
 {
   "name": "@zernio/cli",
-  "version": "0.4.0",
-  "description": "CLI for Zernio - Schedule posts, manage inbox, broadcasts, sequences, and automations across 14 platforms",
+  "version": "0.5.0",
+  "description": "CLI for Zernio - Schedule posts, manage inbox, broadcasts, sequences, and automations across 18 platforms",
   "type": "module",
   "bin": {
     "late": "./dist/index.js",
@@ -17,7 +17,8 @@
     "build": "tsup",
     "dev": "tsup --watch",
     "prepublishOnly": "npm run build",
-    "gen": "node scripts/generate-commands.mjs"
+    "gen": "node scripts/generate-commands.mjs",
+    "typecheck": "node --stack-size=60000 node_modules/typescript/lib/tsc.js --noEmit"
   },
   "keywords": [
     "social-media",
