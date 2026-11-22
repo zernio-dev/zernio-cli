@@ -34,8 +34,7 @@ export function registerAccountCommands(yargs: Argv): Argv {
       async (argv) => {
         try {
           const late = createClient();
-          // SDK has getAccountHealth for single account details
-          const { data } = await late.accounts.getAccountHealth({ path: { accountId: argv.id! } });
+          const { data } = await late.accounts.getAccount({ path: { accountId: argv.id! } });
           output(data, argv.pretty as boolean);
         } catch (err) {
           handleError(err);

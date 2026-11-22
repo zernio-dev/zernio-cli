@@ -125,6 +125,11 @@ zernio auth:check
 | `zernio comment-automations:delete <id>` | Delete automation |
 | `zernio comment-automations:logs <id>` | List trigger logs |
 
+## Upgrading to 0.6
+
+- The comment-to-DM commands moved from `automations:*` to `comment-automations:*`. `automations:*` now holds the generated workflow automation commands (for example `automations:update <automationId>`, `automations:take-over <automationId>`).
+- `accounts:get <id>` returns the account itself. The single-account health check is now `accounts:get-health <accountId>`.
+
 ## Configuration
 
 Config is stored at `~/.zernio/config.json`. Environment variables take precedence:

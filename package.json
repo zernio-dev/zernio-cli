@@ -1,6 +1,6 @@
 {
   "name": "@zernio/cli",
-  "version": "0.5.0",
+  "version": "0.6.0",
   "description": "CLI for Zernio - Schedule posts, manage inbox, broadcasts, sequences, and automations across 18 platforms",
   "type": "module",
   "bin": {
@@ -43,7 +43,7 @@
     "url": "https://github.com/zernio-dev/zernio-cli"
   },
   "dependencies": {
-    "@zernio/node": "^0.2.1664",
+    "@zernio/node": "^0.2.1730",
     "open": "^10.1.0",
     "yargs": "^17.7.2"
   },
