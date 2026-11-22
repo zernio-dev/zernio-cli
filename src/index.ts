@@ -1,4 +1,4 @@
-import yargs from 'yargs';
+import yargs, { type Argv } from 'yargs';
 import { hideBin } from 'yargs/helpers';
 import { registerAuthCommands } from './commands/auth.js';
 import { registerProfileCommands } from './commands/profiles.js';
@@ -21,12 +21,12 @@ import { registerTrackingTagCommands } from './commands/tracking-tags.js';
 import { registerGeneratedCommands } from './commands/generated.js';
 
 /**
- * Zernio CLI - Schedule posts, manage inbox, broadcasts, sequences, and automations across 14 platforms.
+ * Zernio CLI - Schedule posts, manage inbox, broadcasts, sequences, and automations across 18 platforms.
  *
  * Outputs JSON by default (optimized for AI agents and piping).
  * Use --pretty for human-readable indented JSON.
  */
-let cli = yargs(hideBin(process.argv))
+let cli: Argv = yargs(hideBin(process.argv))
   .scriptName('zernio')
   .usage('Usage: zernio <command> [options]')
   .option('pretty', {
