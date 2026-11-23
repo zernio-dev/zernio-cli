@@ -3702,6 +3702,7 @@ export function registerGeneratedCommands(yargs: Argv): Argv {
           .option('status', { type: 'string', describe: 'body param' })
           .option('startDate', { type: 'string', describe: 'body param' })
           .option('endDate', { type: 'string', describe: 'body param' })
+          .option('platformSpecificData', { type: 'string', describe: 'body param (JSON)' })
           .option('locationTargetingType', { type: 'string', describe: 'body param (JSON)' })
           .option('bidStrategy', { type: 'string', describe: 'body param' })
           .option('bidAmount', { type: 'number', describe: 'body param' })
@@ -3731,6 +3732,7 @@ export function registerGeneratedCommands(yargs: Argv): Argv {
           if (argv['status'] !== undefined) body['status'] = argv['status'];
           if (argv['startDate'] !== undefined) body['startDate'] = argv['startDate'];
           if (argv['endDate'] !== undefined) body['endDate'] = argv['endDate'];
+          if (argv['platformSpecificData'] !== undefined) body['platformSpecificData'] = JSON.parse(String(argv['platformSpecificData']));
           if (argv['locationTargetingType'] !== undefined) body['locationTargetingType'] = JSON.parse(String(argv['locationTargetingType']));
           if (argv['bidStrategy'] !== undefined) body['bidStrategy'] = argv['bidStrategy'];
           if (argv['bidAmount'] !== undefined) body['bidAmount'] = argv['bidAmount'];
@@ -4552,7 +4554,7 @@ export function registerGeneratedCommands(yargs: Argv): Argv {
     )
     .command(
       'adcampaigns:get-ad-set-targeting <adSetId>',
-      'Read a Reddit ad group\'s targeting and schedule',
+      'Read an ad group\'s targeting and schedule',
       (y) =>
         y
           .positional('adSetId', { type: 'string', describe: 'adSetId', demandOption: true })
@@ -14160,7 +14162,8 @@ export function registerGeneratedCommands(yargs: Argv): Argv {
         y
           .option('profileId', { type: 'string', describe: 'query param', demandOption: true })
           .option('redirect_url', { type: 'string', describe: 'query param' })
-          .option('reconnectAccountId', { type: 'string', describe: 'query param' }),
+          .option('reconnectAccountId', { type: 'string', describe: 'query param' })
+          .option('region', { type: 'string', describe: 'query param' }),
       async (argv) => {
         try {
           const late = createClient();
@@ -14168,6 +14171,7 @@ export function registerGeneratedCommands(yargs: Argv): Argv {
           if (argv['profileId'] !== undefined) query['profileId'] = argv['profileId'];
           if (argv['redirect_url'] !== undefined) query['redirect_url'] = argv['redirect_url'];
           if (argv['reconnectAccountId'] !== undefined) query['reconnectAccountId'] = argv['reconnectAccountId'];
+          if (argv['region'] !== undefined) query['region'] = argv['region'];
           const { data } = await (late as any).connect.getAmazonAdsConnectUrl({ query: query as any });
           output(data, argv.pretty as boolean);
         } catch (err) {
@@ -16459,6 +16463,9 @@ export function registerGeneratedCommands(yargs: Argv): Argv {
           .option('destinationId', { type: 'string', describe: 'body param, required' })
           .option('eventNames', { type: 'string', describe: 'body param (comma-separated)' })
           .option('sources', { type: 'string', describe: 'body param (comma-separated)' })
+          .option('eventNameMap', { type: 'string', describe: 'body param (JSON)' })
+          .option('valueOverride', { type: 'string', describe: 'body param (JSON)' })
+          .option('valueCondition', { type: 'string', describe: 'body param (JSON)' })
           .option('apiSecret', { type: 'string', describe: 'body param' })
           .option('body', { type: 'string', describe: 'Whole request body (JSON); field flags override its keys' }),
       async (argv) => {
@@ -16470,6 +16477,9 @@ export function registerGeneratedCommands(yargs: Argv): Argv {
           if (argv['destinationId'] !== undefined) body['destinationId'] = argv['destinationId'];
           if (argv['eventNames'] !== undefined) body['eventNames'] = String(argv['eventNames']).split(',').map((s) => s.trim()).filter(Boolean);
           if (argv['sources'] !== undefined) body['sources'] = String(argv['sources']).split(',').map((s) => s.trim()).filter(Boolean);
+          if (argv['eventNameMap'] !== undefined) body['eventNameMap'] = JSON.parse(String(argv['eventNameMap']));
+          if (argv['valueOverride'] !== undefined) body['valueOverride'] = JSON.parse(String(argv['valueOverride']));
+          if (argv['valueCondition'] !== undefined) body['valueCondition'] = JSON.parse(String(argv['valueCondition']));
           if (argv['apiSecret'] !== undefined) body['apiSecret'] = argv['apiSecret'];
           const { data } = await (late as any).conversions.createForwardingRule({ body: body as any });
           output(data, argv.pretty as boolean);
@@ -17534,11 +17544,14 @@ export function registerGeneratedCommands(yargs: Argv): Argv {
     )
     .command(
       'conversions:update-forwarding-rule <ruleId>',
-      'Change a forwarding rule\'s API secret',
+      'Update a forwarding rule',
       (y) =>
         y
           .positional('ruleId', { type: 'string', describe: 'ruleId', demandOption: true })
-          .option('apiSecret', { type: 'string', describe: 'body param, required' })
+          .option('apiSecret', { type: 'string', describe: 'body param' })
+          .option('eventNameMap', { type: 'string', describe: 'body param (JSON)' })
+          .option('valueOverride', { type: 'string', describe: 'body param (JSON)' })
+          .option('valueCondition', { type: 'string', describe: 'body param (JSON)' })
           .option('body', { type: 'string', describe: 'Whole request body (JSON); field flags override its keys' }),
       async (argv) => {
         try {
@@ -17546,6 +17559,9 @@ export function registerGeneratedCommands(yargs: Argv): Argv {
           const path = { ruleId: argv['ruleId'] };
           const body: Record<string, unknown> = argv['body'] !== undefined ? JSON.parse(String(argv['body'])) : {};
           if (argv['apiSecret'] !== undefined) body['apiSecret'] = argv['apiSecret'];
+          if (argv['eventNameMap'] !== undefined) body['eventNameMap'] = JSON.parse(String(argv['eventNameMap']));
+          if (argv['valueOverride'] !== undefined) body['valueOverride'] = JSON.parse(String(argv['valueOverride']));
+          if (argv['valueCondition'] !== undefined) body['valueCondition'] = JSON.parse(String(argv['valueCondition']));
           const { data } = await (late as any).conversions.updateForwardingRule({ path, body: body as any });
           output(data, argv.pretty as boolean);
         } catch (err) {
